@@ -1,0 +1,87 @@
+SELECT p.fname, p.lname, phone
+FROM persons p, registrations r, vehicles v
+WHERE p.lname = r.lname AND p.fname = r.fname AND v.vin = r.vin AND v.make = "Chevrolet" AND v.model = "Camaro" AND v.year = "1969";
+
+SELECT b2.fname, b2.lname
+FROM births b1, births b2
+WHERE b1.fname = "Michael" AND b1.lname = "Fox" AND (b1.f_fname = b2.f_fname AND b1.f_lname = b2.f_lname OR b1.m_fname = b2.m_fname AND b1.m_lname = b2.m_lname) AND b2.fname <> "Michael" AND b2.lname <> "Fox";
+
+select distinct p.fname, p.lname
+from births p, births mike, births mikefather, births mikemother,
+births pparents
+where (mike.fname = 'Michael' and mike.lname = 'Fox')
+and not (p.fname = 'Michael' and p.lname = 'Fox')
+and mikefather.fname = mike.f_fname and mikefather.lname = mike.f_lname
+and mikemother.fname = mike.m_fname and mikemother.lname = mike.m_lname
+and ((pparents.fname = p.f_fname and pparents.lname = p.f_lname)
+    or (pparents.fname = p.m_fname and pparents.lname = p.m_lname))
+and ((mikefather.f_fname = pparents.f_fname and mikefather.f_lname = pparents.f_lname)
+    or (mikemother.f_fname = pparents.f_fname and mikemother.f_lname = pparents.f_lname));
+
+SELECT p2.fname, p2.lname
+FROM persons p2, births b2
+WHERE p2.bdate = (SELECT MIN(p1.bdate) 
+FROM births b1, persons p1
+WHERE b1.f_fname == 'Michael' AND b1.f_lname =='Fox' AND b1.fname == p1.fname AND b1.lname == p1.lname
+GROUP BY p1.bdate) AND b2.f_fname == "Michael" AND b2.f_lname == "Fox" AND p2.fname == b2.fname AND p2.lname == b2.lname;
+
+SELECT d2.fname, d2.lname, SUM(d2.points)
+FROM demeritNotices d2
+WHERE d2.ddate = (SELECT d1.ddate FROM demeritNotices d1 WHERE (julianday("now") - d1.ddate) <= julianday("now") - julianday("-2 years"))
+GROUP BY d2.fname, d2.lname;
+
+SELECT fname, lname
+FROM demeritNotices
+WHERE ddate >= date('now', '-2 years')
+GROUP BY points
+HAVING sum(points) >= 15;
+
+
+
+SELECT MAX(m2.regdate)
+FROM marriages m2
+WHERE m2.regdate = (SELECT m1.p1_fname, m1.p1_lname, m1.p2_fname, m1.p2_lname, m1.regdate FROM marriages m1 WHERE m1.p1_fname = 'Michael' and m1.p1_lname = 'Fox')
+
+SELECT m1.p2_fname, m1.p2_lname
+FROM marriages m1
+WHERE m1.p1_fname = 'Michael' and m1.p1_lname = 'Fox'
+and m1.regdate = (SELECT max(m2.regdate)
+FROM marriages m2 
+WHERE m2.p1_fname = 'Michael' and m2.p1_lname = 'Fox');
+
+SELECT make, color
+FROM vehicles
+WHERE 
+CROSSJOIN
+
+DROP VIEW personDetails;
+
+CREATE VIEW personDetails
+AS SELECT DISTINCT p1.fname, p1.lname, p1.bdate, p1.bplace, COUNT(r1.regno) carsowned, COUNT(t1.regno) ticketsRcvd
+FROM tickets t1, persons p1, registrations r1
+GROUP BY r1.fname, r1.lname
+
+DROP VIEW personDetails;
+CREATE VIEW personDetails
+AS SELECT p1.fname, p1.lname, p1.bdate, p1.bplace, (SELECT COUNT(*) FROM registrations WHERE p1.fname = r1.fname AND p1.lname = r1.lname) carsowned, COUNT(t1.tno) ticketsRcvd
+FROM tickets t1, persons p1, registrations r1
+GROUP BY p1.fname, p1.lname;
+SELECT *
+FROM personDetails;
+
+SELECT pd.fname, pd.lname, v.make, v.model
+FROM personDetails pd, vehicles v, registrations r, demeritNotices dn
+WHERE dn.desc LIKE "%red light%" 
+AND pd.ticketsRcvd >= 3
+AND r.fname = pd.fname
+AND r.lname = pd.lname
+AND r.vin = v.vin
+AND dn.fname = pd.fname
+AND dn.lname = pd.lname;
+
+
+
+
+
+
+
